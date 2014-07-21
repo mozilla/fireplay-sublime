@@ -6,7 +6,6 @@ import functools
 import glob
 import sublime
 import sublime_plugin
-import websocket
 import urllib2
 import json
 import types
