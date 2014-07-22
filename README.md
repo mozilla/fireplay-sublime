@@ -4,13 +4,11 @@ This is a thing that connects to WebIDE and does cool things. It's going to be a
 *ATTENTION:* this piece of code is super experimental and can be so radio-active that could break your Sublime!
 
 ## Aim
-The aim to:
+The aim is to:
 
-1. **Connect editor to Firefox Developer tools**
-Live-updates of HTML and CSS, read console logs can be done directly from Sublime without any external tool by connecting to **super-powerful** RDP (aka [Remote Debugging Protocol](https://wiki.mozilla.org/Remote_Debugging_Protocol)). This allow us to edit CSS during runtime exactly as the Web Inspector would.
+1. **Connect Sublime to Firefox Developer tools**: live-updates of HTML and CSS, read console logs can be done directly from Sublime without any external tool by connecting to **super-powerful** RDP (aka [Remote Debugging Protocol](https://wiki.mozilla.org/Remote_Debugging_Protocol)). This allow us to edit CSS during runtime exactly as the Web Inspector would.
 
-2. **Use the editor to deploy apps for FirefoxOS**
-While the new [Firefox WebIDE](https://hacks.mozilla.org/2014/06/webide-lands-in-nightly/) is awesome! Some developers might want to use their favourite editors.
+2. **Use Sublime to deploy apps for FirefoxOS**: while the new [Firefox WebIDE](https://hacks.mozilla.org/2014/06/webide-lands-in-nightly/) is awesome! Some developers might want to use their favourite editors.
 
 ## Installing (for braves on OS X)
 
@@ -51,7 +49,7 @@ Usage instruction are even more experimental and will be soon simplified.
 * [Emscripten ffdb.py for b2g interaction](https://github.com/kripken/emscripten/blob/master/tools/ffdb.py)
 * [WebIDE implementation for pushing the app in javascript](http://mxr.mozilla.org/mozilla-central/source/toolkit/devtools/apps/app-actor-front.js)
 
-## Ideas
+### Ideas
 
 * Remote style editor (start there, probably performance issues, gotta work around that)
 * Binding Sublime console
