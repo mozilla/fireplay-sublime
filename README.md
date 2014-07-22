@@ -1,4 +1,4 @@
-# webide-st
+# Fireplay Sublime
 
 This is a thing that connects to WebIDE and does cool things. It's going to be amazing.
 

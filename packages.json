@@ -5,13 +5,13 @@
 			"name": "Fireplay",
 			"description": "Tools for development for Firefox Desktop and FirefoxOS",
 			"author": "Nicola Greco",
-			"homepage": "https://github.com/nicolagreco/fireplay-sublime",
+			"homepage": "https://github.com/mozilla/fireplay-sublime",
 			"last_modified": "2014-07-18 00:00:00",
 			"platforms": {
 				"*": [
 					{
 						"version": "0.1",
-						"url": "https://nodeload.github.com/sokolovstas/SublimeWebInspector/zip/1.4"
+						"url": ""
 					}
 				]
 			}
