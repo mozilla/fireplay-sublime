@@ -19,14 +19,17 @@ class Fireplay:
     self.root = None
     self.selected_tab = None
 
-  def get_tabs(self, force=False):
+  def get_root(self, force=False):
     if not self.root or force:
-      res = self.client.send({
+      self.root = self.client.send({
         'to':'root',
         'type': 'listTabs'
       })
-      self.root = res
 
+    return self.root
+
+  def get_tabs(self, force=False):
+    self.get_root(force)
     return self.root["tabs"]
 
   # TODO allow multiple tabs with multiple codebase
@@ -78,10 +81,29 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
     self.view.window().show_quick_panel(items, self.selecting_tab)
 
   def selecting_tab(self, index):
-    if index == -1:
-      return
+    if index == -1: return
+    fp.select_tab(self.tabs[index])
 
-    # inject the javascript that will allow to document.styleSheets.reload()
+class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
+  '''
+  The Fireplay command for Firefox Os
+  '''
+  def run(self, edit):
+    global fp
+
+    if not fp:
+      # TODO Port should be a setting
+      fp = Fireplay("localhost", 58602)
+
+    if not 'deviceActor' in fp.get_root():
+      print "No device found"
+
+    self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
+    items = [t['url'] for t in self.tabs]
+    self.view.window().show_quick_panel(items, self.selecting_tab)
+
+  def selecting_tab(self, index):
+    if index == -1: return
     fp.select_tab(self.tabs[index])
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
