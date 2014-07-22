@@ -75,9 +75,9 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
 
     self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
     items = [t['url'] for t in self.tabs]
-    self.view.window().show_quick_panel(items, self.remote_debug_url_selected)
+    self.view.window().show_quick_panel(items, self.selecting_tab)
 
-  def remote_debug_url_selected(self, index):
+  def selecting_tab(self, index):
     if index == -1:
       return
 
