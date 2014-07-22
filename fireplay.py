@@ -1,6 +1,5 @@
 import os, sys
-import sublime
-import sublime_plugin
+import sublime, sublime_plugin
 import re
 
 from fireplaylib.client import MozClient
@@ -17,21 +16,22 @@ class Fireplay:
   # Make it on a different thread or with twisted since it is blocking at the moment
   def __init__(self, host, port):
     self.client = MozClient(host, port)
-    self.tabs = None
+    self.root = None
     self.selected_tab = None
 
   def get_tabs(self, force=False):
-    if not self.tabs or force:
+    if not self.root or force:
       res = self.client.send({
         'to':'root',
         'type': 'listTabs'
       })
-      self.tabs = res["tabs"]
+      self.root = res
 
-    return self.tabs
+    return self.root["tabs"]
 
-  def select_tab(self, index):
-    self.selected_tab = self.tabs[index]
+  # TODO allow multiple tabs with multiple codebase
+  def select_tab(self, tab):
+    self.selected_tab = tab
 
   def reload_css(self):
     # TODO Avoid touching prototype, shrink in one call only
@@ -82,7 +82,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
       return
 
     # inject the javascript that will allow to document.styleSheets.reload()
-    fp.select_tab(index)
+    fp.select_tab(self.tabs[index])
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
   '''
@@ -92,6 +92,7 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
     mapping = {}
     
     # Let the user choose the device to connect
+    # TODO eventually find possible connections available through ADB
     mapping['fireplay_start_firefox'] = 'Start Firefox with remote debug port 6080'
     items = mapping.values()
     self.cmds = mapping.keys()
