@@ -93,9 +93,9 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
     
     # Let the user choose the device to connect
     mapping['fireplay_start_firefox'] = 'Start Firefox with remote debug port 6080'
+    items = mapping.values()
     self.cmds = mapping.keys()
-    self.items = mapping.values()
-    self.view.window().show_quick_panel(self.items, self.command_selected)
+    self.view.window().show_quick_panel(items, self.command_selected)
 
   def command_selected(self, index):
     if index == -1: return
