@@ -1,16 +1,41 @@
 # Fireplay Sublime
 
 This is a thing that connects to WebIDE and does cool things. It's going to be amazing.
+*ATTENTION:* this piece of code is super experimental and can be so radio-active that could break your Sublime!
 
-## Existing projects and libraries to explore
+## Installing (for braves on OS X)
+
+1. Install the plugin
+```
+$ cd ~/Library/Application Support/Sublime Text 2/Packages
+$ git clone https://github.com/mozilla/fireplay-sublime fireplay
+```
+2. In Firefox `about:config` set `devtools.debugger.remote-enabled` to **true**
+
+## Usage
+
+Usage instruction are even more experimental and will be soon simplified.
+
+### Usage (long way but safer)
+
+1. Open browser and `shift`+`F2` and type `listen`
+2. Run `cmd`+`shift`+`p`
+3. In Sublime select `Fireplay` and follow the instruction
+
+### Usage (short way but less safe)
+
+1. In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
+
+## Inspirations
+### Existing projects and libraries to explore
 
 * https://github.com/campd/python-fxdevtools
 * https://github.com/harthur/firefox-client
 
-### Change UI in real time
+#### Change UI in real time
 * [Paul's implementation of live-css with devtools](https://github.com/paulrouget/firefox-remote-styleEditors/blob/master/libs/fxui.py)
 
-### Deploy from command line
+#### Deploy from command line
 
 * [Offer a command line tool that communicates with the device and webapps actor](https://bugzilla.mozilla.org/show_bug.cgi?id=1023084)
 * [CLI app tools should have a way to push apps](https://bugzilla.mozilla.org/show_bug.cgi?id=1035185#c1)
