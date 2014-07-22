@@ -1,16 +1,6 @@
-import os
-import sys
-import threading
-import hashlib
-import functools
-import glob
+import os, sys
 import sublime
 import sublime_plugin
-import urllib2
-import json
-import types
-import re
-import time
 import re
 
 from fireplaylib.client import MozClient
@@ -21,36 +11,66 @@ FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n  // Reload
 FIREPLAY_CSS_RELOAD = "document.styleSheets.reload()"
 
 class Fireplay:
+  '''
+  The Fireplay main client
+  '''
   # Make it on a different thread or with twisted since it is blocking at the moment
   def __init__(self, host, port):
     self.client = MozClient(host, port)
-  def get_tabs(self):
-    return self.client.send({'to':'root', 'type': 'listTabs'})['tabs']
-  def prepare_css(self, console_actor):
-    self.console_actor = console_actor
-    return self.client.send({'to':console_actor, 'type': 'evaluateJS', 'text': FIREPLAY_CSS, "frameActor": None})
+    self.tabs = None
+    self.selected_tab = None
+
+  def get_tabs(self, force=False):
+    if not self.tabs or force:
+      res = self.client.send({
+        'to':'root',
+        'type': 'listTabs'
+      })
+      self.tabs = res["tabs"]
+
+    return self.tabs
+
+  def select_tab(self, index):
+    self.selected_tab = self.tabs[index]
+
   def reload_css(self):
-    return self.client.send({'to':self.console_actor, 'type': 'evaluateJS', 'text': FIREPLAY_CSS_RELOAD, "frameActor": None})
+    # TODO Avoid touching prototype, shrink in one call only
+    console = self.selected_tab["consoleActor"]
+
+    self.client.send({'to':console, 'type': 'evaluateJS', 'text': FIREPLAY_CSS, "frameActor": None})
+    return self.client.send({
+      'to':console,
+      'type': 'evaluateJS',
+      'text': FIREPLAY_CSS_RELOAD,
+      "frameActor": None
+    })
 
 class FireplayCssReloadOnSave(sublime_plugin.EventListener):
+  '''
+  Listener on save
+  '''
   def on_post_save(self, view):
+    global fp
 
     if not fp:
       return
 
+    # TODO this should be a setting
     if not re.search("\\.(css|js|sass|less|scss|styl)$", view.file_name()):
-      print "not reloading"
       return
 
-    print "reloading css"
     fp.reload_css()
-    # fp.inject_runtime()
+    # TODO fp.inject_runtime() for B2G
 
 class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
+  '''
+  The Fireplay command for Firefox Desktop
+  '''
   def run(self, edit):
     global fp
 
     if not fp:
+      # TODO Port should be a setting
       fp = Fireplay("localhost", 6080)
 
     self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
@@ -62,7 +82,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
       return
 
     # inject the javascript that will allow to document.styleSheets.reload()
-    fp.prepare_css(self.tabs[index]["consoleActor"])
+    fp.select_tab(index)
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
   '''
