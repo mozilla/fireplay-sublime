@@ -1,6 +1,9 @@
 import os, sys
 import sublime, sublime_plugin
 import re
+import tempfile, atexit, zipfile
+import uuid
+import json
 
 from fireplaylib import ffdb
 from fireplaylib.client import MozClient
@@ -49,6 +52,93 @@ class Fireplay:
       'text': FIREPLAY_CSS_RELOAD,
       "frameActor": None
     })
+
+  def deploy(self, target_app_path, run=True, debug=False):
+    # MozClient to ffdb
+    # TODO ffdb should be more object oriented
+    webappsActor = self.root["webappsActor"]
+    app_manifest = ffdb.get_packaged_app_manifest(target_app_path)
+
+    apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
+
+    for app in apps:
+      if app['name'] == app_manifest["name"]:
+        if run:
+          self.client.send({"to":webappsActor, "type":"close", 'manifestURL': app['manifestURL']})
+          self.client.send({"to":webappsActor, "type":"uninstall", 'manifestURL': app['manifestURL']})
+
+    app_id = self.install(target_app_path)
+
+    if run:
+      apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
+      for app in apps:
+        if app['name'] == app_manifest["name"]:
+          if run:
+            self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
+
+    if debug:
+      ffdb.b2g_log(app_id)
+
+  def zip(self, target_app_path):
+    (oshandle, tempzip) = tempfile.mkstemp(suffix='.zip', prefix='fireplay_temp_')
+    zipdir(target_app_path, tempzip)
+
+    # Remember to delete the temporary package after we quit.
+    def delete_temp_file():
+      os.remove(tempzip)
+
+    atexit.register(delete_temp_file)
+    return tempzip
+
+  def send_bulk(self, to, data_blob):
+    message = 'bulk ' + to + ' stream ' + str(len(data_blob)) + ':'
+    self.client.sock.sendall(message)
+    self.client.sock.sendall(data_blob)
+    self.client.receive()
+
+  def send_chunk(self, to, data_blob):
+    byte_str = []
+    e = '\u0000'
+    i = 0
+    while i < len(data_blob):
+      o = ord(data_blob[i])
+      if o <= 34 or o >= 128 or o == 92:
+        c = hex(o)[2:]
+        byte_str += e[:-len(c)] + c
+      else:
+        byte_str += data_blob[i]
+      i += 1
+    message = '{"to":"'+to+'","type":"chunk","chunk":"' + ''.join(byte_str) + '"}'
+    message = str(len(message)) + ':' + message
+    self.client.sock.sendall(message)
+    return self.client.receive()
+
+  def install(self, target_app_path):
+    webappsActor = self.root["webappsActor"]
+
+    zip_file = self.zip(target_app_path)
+    app_file = open(zip_file, 'rb')
+    data = app_file.read()
+    file_size = len(data)
+
+    upload_res = self.client.send({"to":webappsActor, "type":'uploadPackage', 'bulk': True})
+
+    if 'actor' in upload_res and 'BulkActor' in upload_res['actor']:
+      packageUploadActor = upload_res['actor']
+      self.send_bulk(packageUploadActor, data)
+    else: # Old B2G 1.4 and older, serialize binary data in JSON text strings (SLOW!)
+      res = self.client.send({"to":webappsActor, "type":'uploadPackage'})
+      packageUploadActor = upload_res['actor']
+      chunk_size = 4*1024*1024
+      i = 0
+      while i < file_size:
+        chunk = data[i:i+chunk_size]
+        self.send_chunk(packageUploadActor, chunk)
+        i += chunk_size
+
+    app_local_id = str(uuid.uuid4())
+    reply = self.client.send({"to":webappsActor, "type":'install', 'appId': app_local_id, 'upload': packageUploadActor})
+    return reply['appId']
 
 class FireplayCssReloadOnSave(sublime_plugin.EventListener):
   '''
@@ -109,19 +199,34 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
       print "Nothing in here"
       return
 
-    items = ["{0}: {1}".format(m["name"], m["description"]) for m in self.manifests]
-    
+    items = ["{0} - {1}".format(m[1]["name"], m[1]["description"]) for m in self.manifests]
     self.view.window().show_quick_panel(items, self.selecting_manifest)
-
-  def get_manifest(self, folder):
-    try:
-      return ffdb.get_packaged_app_manifest(folder)
-    except:
-      return None
 
   def selecting_manifest(self, index):
     if index == -1: return
-    fp.select_tab(self.manifests[index])
+    folder = self.manifests[index][0]
+    fp.deploy(folder)
+
+
+  def get_manifest(self, target_app_path):
+    if os.path.isdir(target_app_path):
+      manifest_file = os.path.join(target_app_path, 'manifest.webapp')
+      if not os.path.isfile(manifest_file):
+        print "Error: Failed to find FFOS packaged app manifest file '" + manifest_file + "'! That directory does not contain a packaged app?"
+        return None
+      return (target_app_path, json.loads(open(manifest_file, 'r').read()))
+    elif target_app_path.endswith('.zip') and os.path.isfile(target_app_path):
+      try:
+        z = zipfile.ZipFile(target_app_path, "r")
+        bytes = z.read('manifest.webapp')
+      except Exception, e:
+        print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '" + target_app_path + "'! Error: " + str(e)
+        return None
+      return (target_app_path, json.loads(str(bytes)))
+    else:
+        print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
+        return None
+    return None
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
   '''
@@ -147,3 +252,26 @@ def get_setting(key):
     s = sublime.load_settings("swi.sublime-settings")
     if s and s.has(key):
         return s.get(key)
+
+def zipdir(path, zipfilename):
+  try:
+    import zlib
+    zip_mode = zipfile.ZIP_DEFLATED
+  except:
+    zip_mode = zipfile.ZIP_STORED
+
+  zipf = zipfile.ZipFile(zipfilename, 'w', zip_mode)
+  files_to_compress = []
+  for root, dirs, files in os.walk(path):
+    for file in files:
+      files_to_compress += [(root, file)]
+
+  n = 1
+  for tuple in files_to_compress:
+    (root, file) = tuple
+    filename = os.path.join(root, file)
+    filesize = os.path.getsize(filename)
+    path_in_archive = os.path.relpath(filename, path)
+    n += 1
+    zipf.write(os.path.join(root, file), path_in_archive)
+  zipf.close()
