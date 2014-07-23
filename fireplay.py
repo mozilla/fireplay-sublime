@@ -73,17 +73,6 @@ class Fireplay:
           if run:
             self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
 
-  def zip(self, target_app_path):
-    (oshandle, tempzip) = tempfile.mkstemp(suffix='.zip', prefix='fireplay_temp_')
-    zipdir(target_app_path, tempzip)
-
-    # Remember to delete the temporary package after we quit.
-    def delete_temp_file():
-      os.remove(tempzip)
-
-    atexit.register(delete_temp_file)
-    return tempzip
-
   def send_bulk(self, to, data_blob):
     message = 'bulk ' + to + ' stream ' + str(len(data_blob)) + ':'
     self.client.sock.sendall(message)
@@ -110,7 +99,7 @@ class Fireplay:
   def install(self, target_app_path):
     webappsActor = self.root["webappsActor"]
 
-    zip_file = self.zip(target_app_path)
+    zip_file = zip_path(target_app_path)
     app_file = open(zip_file, 'rb')
     data = app_file.read()
     file_size = len(data)
@@ -268,3 +257,14 @@ def get_manifest(target_app_path):
       print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
       return None
   return None
+
+def zip_path(target_app_path):
+    (oshandle, tempzip) = tempfile.mkstemp(suffix='.zip', prefix='fireplay_temp_')
+    zipdir(target_app_path, tempzip)
+
+    # Remember to delete the temporary package after we quit.
+    def delete_temp_file():
+      os.remove(tempzip)
+
+    atexit.register(delete_temp_file)
+    return tempzip
