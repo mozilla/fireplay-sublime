@@ -73,29 +73,6 @@ class Fireplay:
           if run:
             self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
 
-  def send_bulk(self, to, data_blob):
-    message = 'bulk ' + to + ' stream ' + str(len(data_blob)) + ':'
-    self.client.sock.sendall(message)
-    self.client.sock.sendall(data_blob)
-    self.client.receive()
-
-  def send_chunk(self, to, data_blob):
-    byte_str = []
-    e = '\u0000'
-    i = 0
-    while i < len(data_blob):
-      o = ord(data_blob[i])
-      if o <= 34 or o >= 128 or o == 92:
-        c = hex(o)[2:]
-        byte_str += e[:-len(c)] + c
-      else:
-        byte_str += data_blob[i]
-      i += 1
-    message = '{"to":"'+to+'","type":"chunk","chunk":"' + ''.join(byte_str) + '"}'
-    message = str(len(message)) + ':' + message
-    self.client.sock.sendall(message)
-    return self.client.receive()
-
   def install(self, target_app_path):
     webappsActor = self.root["webappsActor"]
 
@@ -108,7 +85,7 @@ class Fireplay:
 
     if 'actor' in upload_res and 'BulkActor' in upload_res['actor']:
       packageUploadActor = upload_res['actor']
-      self.send_bulk(packageUploadActor, data)
+      self.client.send_bulk(packageUploadActor, data)
     else: # Old B2G 1.4 and older, serialize binary data in JSON text strings (SLOW!)
       res = self.client.send({"to":webappsActor, "type":'uploadPackage'})
       packageUploadActor = upload_res['actor']
@@ -116,7 +93,7 @@ class Fireplay:
       i = 0
       while i < file_size:
         chunk = data[i:i+chunk_size]
-        self.send_chunk(packageUploadActor, chunk)
+        self.client.send_chunk(packageUploadActor, chunk)
         i += chunk_size
 
     app_local_id = str(uuid.uuid4())
