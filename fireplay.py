@@ -5,10 +5,8 @@ import tempfile, atexit, zipfile
 import uuid
 import json
 
-from fireplaylib import ffdb
 from fireplaylib.client import MozClient
 reload(sys.modules['fireplaylib.client'])
-reload(sys.modules['fireplaylib.ffdb'])
 
 fp = None
 FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n  // Reload one stylesheet\n  // usage: document.styleSheets[0].reload()\n  // return: URI of stylesheet if it could be reloaded, overwise undefined\n  if (this.href) {\n    var href = this.href;\n    var i = href.indexOf('?'),\n        last_reload = 'last_reload=' + (new Date).getTime();\n    if (i < 0) {\n      href += '?' + last_reload;\n    } else if (href.indexOf('last_reload=', i) < 0) {\n      href += '&' + last_reload;\n    } else {\n      href = href.replace(/last_reload=\\d+/, last_reload);\n    }\n    return this.ownerNode.href = href;\n  }\n};\n\nStyleSheetList.prototype.reload = function reload(){\n  // Reload all stylesheets\n  // usage: document.styleSheets.reload()\n  for (var i=0; i<this.length; i++) {\n    this[i].reload()\n  }\n};"
@@ -54,10 +52,9 @@ class Fireplay:
     })
 
   def deploy(self, target_app_path, run=True, debug=False):
-    # MozClient to ffdb
-    # TODO ffdb should be more object oriented
+
     webappsActor = self.root["webappsActor"]
-    app_manifest = ffdb.get_packaged_app_manifest(target_app_path)
+    app_manifest = get_manifest(target_app_path)[1]
 
     apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
 
@@ -75,9 +72,6 @@ class Fireplay:
         if app['name'] == app_manifest["name"]:
           if run:
             self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
-
-    if debug:
-      ffdb.b2g_log(app_id)
 
   def zip(self, target_app_path):
     (oshandle, tempzip) = tempfile.mkstemp(suffix='.zip', prefix='fireplay_temp_')
@@ -193,7 +187,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
       return
 
     folders = self.view.window().folders()
-    self.manifests = list(filter(None, (self.get_manifest(f) for f in folders)))
+    self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
 
     if not self.manifests:
       print "Nothing in here"
@@ -206,27 +200,6 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
     if index == -1: return
     folder = self.manifests[index][0]
     fp.deploy(folder)
-
-
-  def get_manifest(self, target_app_path):
-    if os.path.isdir(target_app_path):
-      manifest_file = os.path.join(target_app_path, 'manifest.webapp')
-      if not os.path.isfile(manifest_file):
-        print "Error: Failed to find FFOS packaged app manifest file '" + manifest_file + "'! That directory does not contain a packaged app?"
-        return None
-      return (target_app_path, json.loads(open(manifest_file, 'r').read()))
-    elif target_app_path.endswith('.zip') and os.path.isfile(target_app_path):
-      try:
-        z = zipfile.ZipFile(target_app_path, "r")
-        bytes = z.read('manifest.webapp')
-      except Exception, e:
-        print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '" + target_app_path + "'! Error: " + str(e)
-        return None
-      return (target_app_path, json.loads(str(bytes)))
-    else:
-        print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
-        return None
-    return None
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
   '''
@@ -275,3 +248,23 @@ def zipdir(path, zipfilename):
     n += 1
     zipf.write(os.path.join(root, file), path_in_archive)
   zipf.close()
+
+def get_manifest(target_app_path):
+  if os.path.isdir(target_app_path):
+    manifest_file = os.path.join(target_app_path, 'manifest.webapp')
+    if not os.path.isfile(manifest_file):
+      print "Error: Failed to find FFOS packaged app manifest file '" + manifest_file + "'! That directory does not contain a packaged app?"
+      return None
+    return (target_app_path, json.loads(open(manifest_file, 'r').read()))
+  elif target_app_path.endswith('.zip') and os.path.isfile(target_app_path):
+    try:
+      z = zipfile.ZipFile(target_app_path, "r")
+      bytes = z.read('manifest.webapp')
+    except Exception, e:
+      print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '" + target_app_path + "'! Error: " + str(e)
+      return None
+    return (target_app_path, json.loads(str(bytes)))
+  else:
+      print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
+      return None
+  return None
