@@ -1,9 +1,6 @@
 # Fireplay Sublime
+*ATTENTION:* this piece of code is super experimental and can be so radio-active that could break your Sublime! It's going to be amazing.
 
-This is a thing that connects to WebIDE and does cool things. It's going to be amazing.
-*ATTENTION:* this piece of code is super experimental and can be so radio-active that could break your Sublime!
-
-## Aim
 The aim is to:
 
 1. **Connect Sublime to Firefox Developer tools**: live-updates of HTML and CSS, read console logs can be done directly from Sublime without any external tool by connecting to **super-powerful** RDP (aka [Remote Debugging Protocol](https://wiki.mozilla.org/Remote_Debugging_Protocol)). This allow us to edit CSS during runtime exactly as the Web Inspector would.
