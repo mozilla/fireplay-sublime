@@ -77,6 +77,29 @@ to receive in response.
         response = self.receive()
         return response
 
+    def send_bulk(self, to, data_blob):
+        message = 'bulk ' + to + ' stream ' + str(len(data_blob)) + ':'
+        self.sock.sendall(message)
+        self.sock.sendall(data_blob)
+        self.receive()
+
+    def send_chunk(self, to, data_blob):
+        byte_str = []
+        e = '\u0000'
+        i = 0
+        while i < len(data_blob):
+            o = ord(data_blob[i])
+            if o <= 34 or o >= 128 or o == 92:
+                c = hex(o)[2:]
+                byte_str += e[:-len(c)] + c
+            else:
+                byte_str += data_blob[i]
+            i += 1
+        message = '{"to":"'+to+'","type":"chunk","chunk":"' + ''.join(byte_str) + '"}'
+        message = str(len(message)) + ':' + message
+        self.sock.sendall(message)
+        return self.receive()
+
     def close(self):
         """ Close the socket.
 """
