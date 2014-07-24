@@ -185,7 +185,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
       return
 
     # TODO this should be a setting
-    if not re.search("\\.(css|js|sass|less|scss|styl)$", view.file_name()):
+    if not re.search(get_setting("reload_on_save_regex"), view.file_name()):
       return
 
     print fp.client.applicationType
