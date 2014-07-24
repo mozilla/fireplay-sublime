@@ -185,7 +185,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
       return
 
     # TODO this should be a setting
-    if not re.search("\\.(css|js|sass|less|scss|styl)$", view.file_name()):
+    if not re.search(get_setting("reload_on_save_regex"), view.file_name()):
       return
 
     print fp.client.applicationType
@@ -203,7 +203,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
 
     if not fp:
       # TODO Port should be a setting or autodiscover
-      fp = Fireplay('localhost', 6080)
+      fp = Fireplay('localhost', int(get_setting('firefox_remote_port')))
 
     self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
     items = [t['url'] for t in self.tabs]
@@ -223,7 +223,9 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
 
     if not fp:
       # TODO Port should be a setting or autodiscover
-      fp = Fireplay('localhost', 52107)
+      fp = Fireplay('localhost', int(get_setting('firefoxos_remote_port')))
+
+    fp.get_root()
 
     folders = self.view.window().folders()
     self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
