@@ -26,7 +26,7 @@ class Fireplay:
   def get_root(self, force=False):
     if not self.root or force:
       self.root = self.client.send({
-        'to':'root',
+        'to': 'root',
         'type': 'listTabs'
       })
 
@@ -34,91 +34,139 @@ class Fireplay:
 
   def get_tabs(self, force=False):
     self.get_root(force)
-    return self.root["tabs"]
+    return self.root['tabs']
 
   # TODO allow multiple tabs with multiple codebase
   def select_tab(self, tab):
     self.selected_tab = tab
 
   def reload_css(self):
-    # TODO Avoid touching prototype, shrink in one call only
-    console = self.selected_tab["consoleActor"]
+    console = self.selected_tab['consoleActor']
 
-    self.client.send({'to':console, 'type': 'evaluateJS', 'text': FIREPLAY_CSS, "frameActor": None})
+    # TODO Avoid touching prototype, shrink in one call only
+    self.client.send({
+      'to': console,
+      'type': 'evaluateJS',
+      'text': FIREPLAY_CSS,
+      'frameActor': None
+    })
+
     return self.client.send({
-      'to':console,
+      'to': console,
       'type': 'evaluateJS',
       'text': FIREPLAY_CSS_RELOAD,
-      "frameActor": None
+      'frameActor': None
     })
+  def get_apps(self):
+    return self.client.send({
+        'to': self.root["webappsActor"],
+        'type':'getAll'
+      })["apps"]
+
+  def uninstall(self, manifestURL):
+    self.client.send({
+      'to': self.root["webappsActor"],
+      'type': 'close',
+      'manifestURL': manifestURL
+    })
+    self.client.send({
+      'to': self.root["webappsActor"],
+      'type': 'uninstall',
+      'manifestURL': manifestURL
+    })
+
+  def launch(self, manifestURL):
+    self.client.send({
+      'to': self.root["webappsActor"],
+      'type': 'launch',
+      'manifestURL': manifestURL
+    })
+
 
   def deploy(self, target_app_path, run=True, debug=False):
 
-    webappsActor = self.root["webappsActor"]
+    webappsActor = self.root['webappsActor']
     app_manifest = get_manifest(target_app_path)[1]
 
     if run:
-      apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
-      for app in apps:
-        if app['name'] == app_manifest["name"]:
-          self.client.send({"to":webappsActor, "type":"close", 'manifestURL': app['manifestURL']})
-          self.client.send({"to":webappsActor, "type":"uninstall", 'manifestURL': app['manifestURL']})
+      for app in self.get_apps():
+        if app['name'] == app_manifest['name']:
+          self.uninstall(app['manifestURL'])
 
     app_id = self.install(target_app_path)
 
-    apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
-    for app in apps:
+    for app in self.get_apps():
       if app['id'] == app_id:
         self.selected_app = app
-        self.selected_app["local_path"] = target_app_path
-        if run:
-          self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
+        self.selected_app['local_path'] = target_app_path
+
+    if run:
+      self.launch(self.selected_app['manifestURL'])
 
   def install(self, target_app_path):
-    webappsActor = self.root["webappsActor"]
+    webappsActor = self.root['webappsActor']
 
     zip_file = zip_path(target_app_path)
     app_file = open(zip_file, 'rb')
     data = app_file.read()
     file_size = len(data)
 
-    upload_res = self.client.send({"to":webappsActor, "type":'uploadPackage', 'bulk': True})
+    upload_res = self.client.send({
+      'to': webappsActor,
+      'type': 'uploadPackage',
+      'bulk': True
+    })
 
     if 'actor' in upload_res and 'BulkActor' in upload_res['actor']:
       packageUploadActor = upload_res['actor']
       self.client.send_bulk(packageUploadActor, data)
     else: # Old B2G 1.4 and older, serialize binary data in JSON text strings (SLOW!)
-      res = self.client.send({"to":webappsActor, "type":'uploadPackage'})
+      res = self.client.send({
+        'to': webappsActor,
+        'type':'uploadPackage'
+      })
       packageUploadActor = upload_res['actor']
       chunk_size = 4*1024*1024
-      i = 0
-      while i < file_size:
-        chunk = data[i:i+chunk_size]
+      bytes = 0
+      while bytes < file_size:
+        chunk = data[bytes:bytes+chunk_size]
         self.client.send_chunk(packageUploadActor, chunk)
-        i += chunk_size
+        bytes += chunk_size
 
     app_local_id = str(uuid.uuid4())
-    reply = self.client.send({"to":webappsActor, "type":'install', 'appId': app_local_id, 'upload': packageUploadActor})
+    reply = self.client.send({
+      'to': webappsActor,
+      'type': 'install',
+      'appId': app_local_id,
+      'upload': packageUploadActor
+    })
     return reply['appId']
 
   def inject_css(self):
 
-    webappsActor = self.root["webappsActor"]
-    res = self.client.send({"to":webappsActor, "type":"getAppActor", "manifestURL": self.selected_app["manifestURL"]})
+    webappsActor = self.root['webappsActor']
+    res = self.client.send({
+      'to': webappsActor,
+      'type': 'getAppActor',
+      'manifestURL': self.selected_app['manifestURL']
+    })
 
-    styleSheetsActor = res["actor"]["styleSheetsActor"]
-    res = self.client.send({"to":styleSheetsActor, "type":"getStyleSheets"})
+    styleSheetsActor = res['actor']['styleSheetsActor']
+    res = self.client.send({
+      'to': styleSheetsActor,
+      'type': 'getStyleSheets'
+    })
 
     # TODO upload all css always? this should be a setting
-    for styleSheet in res["styleSheets"]:
-      css_file = self.selected_app["local_path"] + styleSheet["href"].replace(self.selected_app["origin"], "")
-      f = open(css_file,"r")
+    for styleSheet in res['styleSheets']:
+      css_file = self.selected_app['local_path'] + styleSheet['href'].replace(self.selected_app['origin'], '')
+      f = open(css_file, 'r')
 
       self.client.send({
-        'to':styleSheet["actor"],
-        'type':"update",
+        'to':styleSheet['actor'],
+        'type': 'update',
         'text': f.read(),
-        "transition":True
+        'transition': True
       })
 
       # This clearly needs fixing, it is blocking. FXDEVTOOLS? new thread?
@@ -154,7 +202,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
 
     if not fp:
       # TODO Port should be a setting or autodiscover
-      fp = Fireplay("localhost", 6080)
+      fp = Fireplay('localhost', 6080)
 
     self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
     items = [t['url'] for t in self.tabs]
@@ -174,20 +222,20 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
 
     if not fp:
       # TODO Port should be a setting or autodiscover
-      fp = Fireplay("localhost", 64177)
+      fp = Fireplay('localhost', 52107)
 
     if not 'deviceActor' in fp.get_root():
-      print "No device found"
+      print 'No device found'
       return
 
     folders = self.view.window().folders()
     self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
 
     if not self.manifests:
-      print "Nothing in here"
+      print 'Nothing in here'
       return
 
-    items = ["{0} - {1}".format(m[1]["name"], m[1]["description"]) for m in self.manifests]
+    items = ['{0} - {1}'.format(m[1]['name'], m[1]['description']) for m in self.manifests]
     self.view.window().show_quick_panel(items, self.selecting_manifest)
 
   def selecting_manifest(self, index):
@@ -216,7 +264,7 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
 
 
 def get_setting(key):
-    s = sublime.load_settings("swi.sublime-settings")
+    s = sublime.load_settings('fireplay.sublime-settings')
     if s and s.has(key):
         return s.get(key)
 
@@ -247,20 +295,23 @@ def get_manifest(target_app_path):
   if os.path.isdir(target_app_path):
     manifest_file = os.path.join(target_app_path, 'manifest.webapp')
     if not os.path.isfile(manifest_file):
-      print "Error: Failed to find FFOS packaged app manifest file '" + manifest_file + "'! That directory does not contain a packaged app?"
+      print "Error: Failed to find FFOS packaged app manifest file '%s'! That directory does not contain a packaged app?" % manifest_file
       return None
     return (target_app_path, json.loads(open(manifest_file, 'r').read()))
+
   elif target_app_path.endswith('.zip') and os.path.isfile(target_app_path):
     try:
       z = zipfile.ZipFile(target_app_path, "r")
       bytes = z.read('manifest.webapp')
     except Exception, e:
-      print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '" + target_app_path + "'! Error: " + str(e)
+      print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '%s'! Error: %s" % target_app_path, str(e)
       return None
     return (target_app_path, json.loads(str(bytes)))
+
   else:
-      print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
+      print "Error: Path '%s' is neither a directory or a .zip file to represent the location of a FFOS packaged app!" % target_app_path
       return None
+
   return None
 
 def zip_path(target_app_path):
