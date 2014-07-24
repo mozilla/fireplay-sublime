@@ -188,10 +188,11 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
     if not re.search("\\.(css|js|sass|less|scss|styl)$", view.file_name()):
       return
 
-    if 'deviceActor' in fp.get_root():
-      fp.inject_css()
-    else:
+    print fp.client.applicationType
+    if fp.client.applicationType == 'browser':
       fp.reload_css()
+    else:
+      fp.inject_css()
 
 class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
   '''
@@ -223,10 +224,6 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
     if not fp:
       # TODO Port should be a setting or autodiscover
       fp = Fireplay('localhost', 52107)
-
-    if not 'deviceActor' in fp.get_root():
-      print 'No device found'
-      return
 
     folders = self.view.window().folders()
     self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
