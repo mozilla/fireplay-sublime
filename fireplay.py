@@ -21,6 +21,7 @@ class Fireplay:
     self.client = MozClient(host, port)
     self.root = None
     self.selected_tab = None
+    self.selected_app = None
 
   def get_root(self, force=False):
     if not self.root or force:
@@ -56,22 +57,22 @@ class Fireplay:
     webappsActor = self.root["webappsActor"]
     app_manifest = get_manifest(target_app_path)[1]
 
-    apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
-
-    for app in apps:
-      if app['name'] == app_manifest["name"]:
-        if run:
+    if run:
+      apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
+      for app in apps:
+        if app['name'] == app_manifest["name"]:
           self.client.send({"to":webappsActor, "type":"close", 'manifestURL': app['manifestURL']})
           self.client.send({"to":webappsActor, "type":"uninstall", 'manifestURL': app['manifestURL']})
 
     app_id = self.install(target_app_path)
 
-    if run:
-      apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
-      for app in apps:
-        if app['name'] == app_manifest["name"]:
-          if run:
-            self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
+    apps = self.client.send({"to":webappsActor, "type":"getAll"})["apps"]
+    for app in apps:
+      if app['id'] == app_id:
+        self.selected_app = app
+        self.selected_app["local_path"] = target_app_path
+        if run:
+          self.client.send({"to":webappsActor, "type":"launch", 'manifestURL': app['manifestURL']})
 
   def install(self, target_app_path):
     webappsActor = self.root["webappsActor"]
@@ -100,6 +101,31 @@ class Fireplay:
     reply = self.client.send({"to":webappsActor, "type":'install', 'appId': app_local_id, 'upload': packageUploadActor})
     return reply['appId']
 
+  def inject_css(self):
+
+    webappsActor = self.root["webappsActor"]
+    res = self.client.send({"to":webappsActor, "type":"getAppActor", "manifestURL": self.selected_app["manifestURL"]})
+
+    styleSheetsActor = res["actor"]["styleSheetsActor"]
+    res = self.client.send({"to":styleSheetsActor, "type":"getStyleSheets"})
+
+    # TODO upload all css always? this should be a setting
+    for styleSheet in res["styleSheets"]:
+      css_file = self.selected_app["local_path"] + styleSheet["href"].replace(self.selected_app["origin"], "")
+      f = open(css_file,"r")
+
+      self.client.send({
+        'to':styleSheet["actor"],
+        'type':"update",
+        'text': f.read(),
+        "transition":True
+      })
+
+      # This clearly needs fixing, it is blocking. FXDEVTOOLS? new thread?
+      res1 = self.client.receive()
+      res2 = self.client.receive()
+      res3 = self.client.receive()
+
 class FireplayCssReloadOnSave(sublime_plugin.EventListener):
   '''
   Listener on save
@@ -114,8 +140,10 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
     if not re.search("\\.(css|js|sass|less|scss|styl)$", view.file_name()):
       return
 
-    fp.reload_css()
-    # TODO fp.inject_runtime() for B2G
+    if 'deviceActor' in fp.get_root():
+      fp.inject_css()
+    else:
+      fp.reload_css()
 
 class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
   '''
@@ -146,7 +174,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
 
     if not fp:
       # TODO Port should be a setting or autodiscover
-      fp = Fireplay("localhost", 62306)
+      fp = Fireplay("localhost", 64177)
 
     if not 'deviceActor' in fp.get_root():
       print "No device found"
