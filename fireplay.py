@@ -295,7 +295,7 @@ def get_manifest(target_app_path):
   if os.path.isdir(target_app_path):
     manifest_file = os.path.join(target_app_path, 'manifest.webapp')
     if not os.path.isfile(manifest_file):
-      print "Error: Failed to find FFOS packaged app manifest file '" + manifest_file + "'! That directory does not contain a packaged app?"
+      print "Error: Failed to find FFOS packaged app manifest file '%s'! That directory does not contain a packaged app?" % manifest_file
       return None
     return (target_app_path, json.loads(open(manifest_file, 'r').read()))
 
@@ -304,12 +304,12 @@ def get_manifest(target_app_path):
       z = zipfile.ZipFile(target_app_path, "r")
       bytes = z.read('manifest.webapp')
     except Exception, e:
-      print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '" + target_app_path + "'! Error: " + str(e)
+      print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '%s'! Error: %s" % target_app_path, str(e)
       return None
     return (target_app_path, json.loads(str(bytes)))
 
   else:
-      print "Error: Path '" + target_app_path + "' is neither a directory or a .zip file to represent the location of a FFOS packaged app!"
+      print "Error: Path '%s' is neither a directory or a .zip file to represent the location of a FFOS packaged app!" % target_app_path
       return None
 
   return None
