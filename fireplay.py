@@ -127,11 +127,11 @@ class Fireplay:
       })
       packageUploadActor = upload_res['actor']
       chunk_size = 4*1024*1024
-      i = 0
-      while i < file_size:
-        chunk = data[i:i+chunk_size]
+      bytes = 0
+      while bytes < file_size:
+        chunk = data[bytes:bytes+chunk_size]
         self.client.send_chunk(packageUploadActor, chunk)
-        i += chunk_size
+        bytes += chunk_size
 
     app_local_id = str(uuid.uuid4())
     reply = self.client.send({
