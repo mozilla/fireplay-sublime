@@ -30,6 +30,13 @@ Usage instruction are even more experimental and will be soon simplified.
 
 1. In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
 
+### Usage for Firefox OS
+
+1. Open WebIDE or App Manager and run the simulator
+2. Find the port of the simulator and save it into your settings
+3. Run `cmd`+`shift`+`p`
+4. In Sublime select `Fireplay` and follow the instruction
+
 ## Inspirations
 ### Existing projects and libraries to explore
 
