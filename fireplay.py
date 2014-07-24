@@ -102,40 +102,29 @@ class Fireplay:
     return reply['appId']
 
   def inject_css(self):
-    # styleSheetsActor = self.root["styleSheetsActor"]
-    # res = self.client.send({'to':styleSheetsActor, 'type': 'getStyleSheets'})
+
     webappsActor = self.root["webappsActor"]
     res = self.client.send({"to":webappsActor, "type":"getAppActor", "manifestURL": self.selected_app["manifestURL"]})
 
-    print res
-
-    if "actor" in res:
-      styleSheetsActor = res["actor"]["styleSheetsActor"]
-    else:
-      styleSheetsActor = res["from"]
-
+    styleSheetsActor = res["actor"]["styleSheetsActor"]
     res = self.client.send({"to":styleSheetsActor, "type":"getStyleSheets"})
+
+    # TODO upload all css always? this should be a setting
     for styleSheet in res["styleSheets"]:
       css_file = self.selected_app["local_path"] + styleSheet["href"].replace(self.selected_app["origin"], "")
-      print css_file
-
       f = open(css_file,"r")
+
       self.client.send({
         'to':styleSheet["actor"],
         'type':"update",
         'text': f.read(),
-        "transition":True})
+        "transition":True
+      })
 
       # This clearly needs fixing, it is blocking. FXDEVTOOLS? new thread?
       res1 = self.client.receive()
-      print res1
       res2 = self.client.receive()
-      print res2
       res3 = self.client.receive()
-      print res3
-
-
-
 
 class FireplayCssReloadOnSave(sublime_plugin.EventListener):
   '''
