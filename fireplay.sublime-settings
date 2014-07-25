@@ -5,7 +5,7 @@
 		"linux": "/usr/bin/firefox"
 	},
 	"firefox_remote_port": "6080",
-	"firefoxos_remote_port": "54909",
+	"firefoxos_remote_port": "61430",
 	"reload_on_save_regex": "\\.(css|js|sass|less|scss|styl)$",
 	"reload_on_start": true,
 	"reload_on_save": true,

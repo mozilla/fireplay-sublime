@@ -65,25 +65,25 @@ class Fireplay:
 
     def get_apps(self):
         return self.client.send({
-            'to': self.root["webappsActor"],
+            'to': self.root['webappsActor'],
             'type': 'getAll'
-        })["apps"]
+        })['apps']
 
     def uninstall(self, manifestURL):
         self.client.send({
-            'to': self.root["webappsActor"],
+            'to': self.root['webappsActor'],
             'type': 'close',
             'manifestURL': manifestURL
         })
         self.client.send({
-            'to': self.root["webappsActor"],
+            'to': self.root['webappsActor'],
             'type': 'uninstall',
             'manifestURL': manifestURL
         })
 
     def launch(self, manifestURL):
         self.client.send({
-            'to': self.root["webappsActor"],
+            'to': self.root['webappsActor'],
             'type': 'launch',
             'manifestURL': manifestURL
         })
@@ -193,7 +193,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
             return
 
         # TODO this should be a setting
-        if not re.search(get_setting("reload_on_save_regex"), view.file_name()):
+        if not re.search(get_setting('reload_on_save_regex'), view.file_name()):
             return
 
         print fp.client.applicationType
@@ -321,7 +321,7 @@ def get_manifest(target_app_path):
 
     elif target_app_path.endswith('.zip') and os.path.isfile(target_app_path):
         try:
-            z = zipfile.ZipFile(target_app_path, "r")
+            z = zipfile.ZipFile(target_app_path, 'r')
             bytes = z.read('manifest.webapp')
         except Exception, e:
             print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '%s'! Error: %s" % target_app_path, str(e)
