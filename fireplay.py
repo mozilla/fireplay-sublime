@@ -212,7 +212,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
 
         if not fp:
             # TODO Port should be a setting or autodiscover
-            fp = Fireplay('localhost', int(get_setting('firefox_remote_port')))
+            fp = Fireplay('localhost', get_setting('firefox_remote_port'))
 
         self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
         items = [t['url'] for t in self.tabs]
@@ -235,7 +235,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
 
         if not fp:
             # TODO Port should be a setting or autodiscover
-            fp = Fireplay('localhost', int(get_setting('firefoxos_remote_port')))
+            fp = Fireplay('localhost', get_setting('firefoxos_remote_port'))
 
         fp.get_root()
 
