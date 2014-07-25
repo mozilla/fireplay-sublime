@@ -99,7 +99,11 @@ class MozClient(object):
             else:
                 byte_str += data_blob[i]
             i += 1
-        message = '{"to":"'+to+'","type":"chunk","chunk":"' + ''.join(byte_str) + '"}'
+        message = json.dumps({
+            'to': to,
+            'type': 'chunk',
+            'chunk': ''.join(byte_str)
+        })
         message = str(len(message)) + ':' + message
         self.sock.sendall(message)
         return self.receive()
