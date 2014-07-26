@@ -12,8 +12,10 @@ import subprocess
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
+from fireplaylib import firefox_helper
 reload(sys.modules['fireplaylib.client'])
 reload(sys.modules['fireplaylib.b2g_helper'])
+reload(sys.modules['fireplaylib.firefox_helper'])
 
 fp = None
 FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n    // Reload one stylesheet\n    // usage: document.styleSheets[0].reload()\n    // return: URI of stylesheet if it could be reloaded, overwise undefined\n    if (this.href) {\n        var href = this.href;\n        var i = href.indexOf('?'),\n                last_reload = 'last_reload=' + (new Date).getTime();\n        if (i < 0) {\n            href += '?' + last_reload;\n        } else if (href.indexOf('last_reload=', i) < 0) {\n            href += '&' + last_reload;\n        } else {\n            href = href.replace(/last_reload=\\d+/, last_reload);\n        }\n        return this.ownerNode.href = href;\n    }\n};\n\nStyleSheetList.prototype.reload = function reload(){\n    // Reload all stylesheets\n    // usage: document.styleSheets.reload()\n    for (var i=0; i<this.length; i++) {\n        this[i].reload()\n    }\n};"
@@ -206,7 +208,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
-    The Fireplay command for Firefox Desktop
+    The Fireplay command to connect Firefox or FirefoxOS to a given port
     '''
     def run(self, edit, port):
         global fp
@@ -254,6 +256,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
 
         # Start Firefox instance
         # self.view.run_command('fireplay_start_any', {'port': self.ports[index]})
+        firefox_helper.start()
 
 
 class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
