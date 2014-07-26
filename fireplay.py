@@ -10,9 +10,9 @@ import uuid
 import json
 
 from fireplaylib.client import MozClient
-# from fireplaylib import b2g_helper
+from fireplaylib import b2g_helper
 reload(sys.modules['fireplaylib.client'])
-# reload(sys.modules['fireplaylib.b2g_helper'])
+reload(sys.modules['fireplaylib.b2g_helper'])
 
 fp = None
 FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n    // Reload one stylesheet\n    // usage: document.styleSheets[0].reload()\n    // return: URI of stylesheet if it could be reloaded, overwise undefined\n    if (this.href) {\n        var href = this.href;\n        var i = href.indexOf('?'),\n                last_reload = 'last_reload=' + (new Date).getTime();\n        if (i < 0) {\n            href += '?' + last_reload;\n        } else if (href.indexOf('last_reload=', i) < 0) {\n            href += '&' + last_reload;\n        } else {\n            href = href.replace(/last_reload=\\d+/, last_reload);\n        }\n        return this.ownerNode.href = href;\n    }\n};\n\nStyleSheetList.prototype.reload = function reload(){\n    // Reload all stylesheets\n    // usage: document.styleSheets.reload()\n    for (var i=0; i<this.length; i++) {\n        this[i].reload()\n    }\n};"
@@ -198,58 +198,41 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
         if not re.search(get_setting('reload_on_save_regex'), view.file_name()):
             return
 
-        print fp.client.applicationType
         if fp.client.applicationType == 'browser':
             fp.reload_css()
         else:
             fp.inject_css()
 
-
-class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
+class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
     The Fireplay command for Firefox Desktop
     '''
-    def run(self, edit):
+    def run(self, edit, port):
         global fp
+        fp = Fireplay('localhost', port)
 
-        if not fp:
-            # TODO Port should be a setting or autodiscover
-            fp = Fireplay('localhost', get_setting('firefox_remote_port'))
+        fp.get_tabs()
+        print fp.client.applicationType
+        if fp.client.applicationType == 'browser':
+            self.tabs = [t for t in fp.root["tabs"] if t['url'].find('about:') == -1]
+            items = [t['url'] for t in self.tabs]
+            self.view.window().show_quick_panel(items, self.selecting_tab)
+        else:
+            folders = self.view.window().folders()
+            self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
 
-        self.tabs = [t for t in fp.get_tabs() if t['url'].find('about:') == -1]
-        items = [t['url'] for t in self.tabs]
-        self.view.window().show_quick_panel(items, self.selecting_tab)
+            if not self.manifests:
+                print 'Nothing in here'
+                return
+
+            items = [self.pretty_name(m) for m in self.manifests]
+            self.view.window().show_quick_panel(items, self.selecting_manifest)
 
     def selecting_tab(self, index):
         if index == -1:
             return
 
         fp.select_tab(self.tabs[index])
-
-
-class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
-    '''
-    The Fireplay command for Firefox Os
-    '''
-
-    def run(self, edit):
-        global fp
-
-        if not fp:
-            # TODO Port should be a setting or autodiscover
-            fp = Fireplay('localhost', get_setting('firefoxos_remote_port'))
-
-        fp.get_root()
-
-        folders = self.view.window().folders()
-        self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
-
-        if not self.manifests:
-            print 'Nothing in here'
-            return
-
-        items = [self.pretty_name(m) for m in self.manifests]
-        self.view.window().show_quick_panel(items, self.selecting_manifest)
 
     def pretty_name(self, manifest):
         return '{0} - {1}'.format(manifest[1]['name'], manifest[1]['description'])
@@ -262,6 +245,27 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
         fp.deploy(folder)
 
 
+class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
+    '''
+    The Fireplay command for Firefox Desktop
+    '''
+    def run(self, edit):
+        global fp
+
+        # Start Firefox instance
+
+
+class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
+    '''
+    The Fireplay command for Firefox Os
+    '''
+
+    def run(self, edit):
+        global fp
+
+        # Start FirefoxOS instance
+
+
 class FireplayStartCommand(sublime_plugin.TextCommand):
     '''
     The Fireplay main quick panel menu
@@ -269,13 +273,33 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
     def run(self, editswi):
         mapping = {}
 
-        # Let the user choose the device to connect
-        # TODO eventually find possible connections available through ADB
-        mapping['fireplay_start_firefox'] = 'Start Firefox with remote debug port 6080'
-        mapping['fireplay_start_firefox_os'] = 'Start FirefoxOS with remote debug port 6080'
-        items = mapping.values()
-        self.cmds = mapping.keys()
-        self.view.window().show_quick_panel(items, self.command_selected)
+        rdp_ports = b2g_helper.discover_rdp_ports()
+        print rdp_ports
+        if rdp_ports:
+            if "firefox" in rdp_ports: 
+                for port in rdp_ports["firefox"]:
+                    mapping[port] = 'Firefox on %s' % port
+                    
+            if "firefoxos" in rdp_ports:
+                for port in rdp_ports["firefoxos"]:
+                    mapping[port] = 'FirefoxOS on %s' % port
+            items = mapping.values()
+            self.ports = mapping.keys()
+            self.view.window().show_quick_panel(items, self.port_selected)
+
+        else:
+            mapping['fireplay_start_firefox'] = 'Start Firefox with remote debug port 6080'
+            mapping['fireplay_start_firefox_os'] = 'Start FirefoxOS with remote debug port 6080'
+
+            items = mapping.values()
+            self.cmds = mapping.keys()
+            self.view.window().show_quick_panel(items, self.command_selected)
+
+    def port_selected(self, index):
+        if index == -1:
+            return
+
+        self.view.run_command('fireplay_start_any', {'port':self.ports[index]})
 
     def command_selected(self, index):
         if index == -1:

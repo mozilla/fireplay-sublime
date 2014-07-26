@@ -1,5 +1,6 @@
 import os
 import re
+import sys
 import psutil
 
 # Helper functions to locate the simulator
