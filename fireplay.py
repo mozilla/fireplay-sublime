@@ -8,6 +8,7 @@ import atexit
 import zipfile
 import uuid
 import json
+import subprocess
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
@@ -195,13 +196,13 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
             return
 
         # TODO this should be a setting
-        if not re.search(get_setting('reload_on_save_regex'), view.file_name()):
-            return
+        if re.search(get_setting('reload_on_save_regex'), view.file_name()):
 
-        if fp.client.applicationType == 'browser':
-            fp.reload_css()
-        else:
-            fp.inject_css()
+            if fp.client.applicationType == 'browser':
+                fp.reload_css()
+            else:
+                fp.inject_css()
+
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
@@ -212,9 +213,8 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
         fp = Fireplay('localhost', port)
 
         fp.get_tabs()
-        print fp.client.applicationType
         if fp.client.applicationType == 'browser':
-            self.tabs = [t for t in fp.root["tabs"] if t['url'].find('about:') == -1]
+            self.tabs = [t for t in fp.root['tabs'] if t['url'].find('about:') == -1]
             items = [t['url'] for t in self.tabs]
             self.view.window().show_quick_panel(items, self.selecting_tab)
         else:
@@ -253,6 +253,7 @@ class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
         global fp
 
         # Start Firefox instance
+        # self.view.run_command('fireplay_start_any', {'port': self.ports[index]})
 
 
 class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
@@ -264,6 +265,30 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
         global fp
 
         # Start FirefoxOS instance
+        simulators_map = b2g_helper.find_b2gs(sublime.platform())
+        self.simulators = [(k, sim) for k, sims in simulators_map.iteritems() for sim in sims]
+        items = [sim[1] for sim in self.simulators]
+
+        if len(items) == 1:
+            self.selecting_simulator(0)
+        else:
+            self.view.window().show_quick_panel(items, self.selecting_simulator)
+
+    def selecting_simulator(self, index):
+        ext_path, b2g_version = self.simulators[index]
+        b2g_bin = b2g_helper.get_simulator_bin(ext_path, b2g_version, sublime.platform())
+        b2g_profile = b2g_helper.get_simulator_profile(ext_path, b2g_version, sublime.platform())
+
+        subprocess.Popen(
+            '"{0}" -profile "{1}" -start-debugger-server 7777 -no-remote'.format(b2g_bin, b2g_profile),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            shell=True
+        )
+
+        # window.run_command('exec', {
+        #     "cmd": [b2g_bin, '-profile "%s"' % b2g_profile, '-start-debugger-server 6666', '-no-remote']
+        # })
 
 
 class FireplayStartCommand(sublime_plugin.TextCommand):
@@ -274,38 +299,33 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
         mapping = {}
 
         rdp_ports = b2g_helper.discover_rdp_ports()
-        print rdp_ports
-        if rdp_ports:
-            if "firefox" in rdp_ports: 
-                for port in rdp_ports["firefox"]:
-                    mapping[port] = 'Firefox on %s' % port
-                    
-            if "firefoxos" in rdp_ports:
-                for port in rdp_ports["firefoxos"]:
-                    mapping[port] = 'FirefoxOS on %s' % port
-            items = mapping.values()
-            self.ports = mapping.keys()
-            self.view.window().show_quick_panel(items, self.port_selected)
 
+        if rdp_ports['firefox']:
+            for port in rdp_ports['firefox']:
+                mapping[port] = 'Firefox on %s' % port
         else:
-            mapping['fireplay_start_firefox'] = 'Start Firefox with remote debug port 6080'
-            mapping['fireplay_start_firefox_os'] = 'Start FirefoxOS with remote debug port 6080'
+            mapping['firefox'] = 'Start new Firefox instance'
 
-            items = mapping.values()
-            self.cmds = mapping.keys()
-            self.view.window().show_quick_panel(items, self.command_selected)
+        if rdp_ports['firefoxos']:
+            for port in rdp_ports['firefoxos']:
+                mapping[port] = 'FirefoxOS on %s' % port
+        else:
+            mapping['firefoxos'] = 'Start new FirefoxOS instance'
 
-    def port_selected(self, index):
+        items = mapping.values()
+        self.ports = mapping.keys()
+        self.view.window().show_quick_panel(items, self.selecting_port)
+
+    def selecting_port(self, index):
         if index == -1:
             return
 
-        self.view.run_command('fireplay_start_any', {'port':self.ports[index]})
-
-    def command_selected(self, index):
-        if index == -1:
-            return
-
-        self.view.run_command(self.cmds[index])
+        if self.ports[index] == 'firefox':
+            self.view.run_command('fireplay_start_firefox')
+        elif self.ports[index] == 'firefoxos':
+            self.view.run_command('fireplay_start_firefox_os')
+        else:
+            self.view.run_command('fireplay_start_any', {'port': self.ports[index]})
 
 
 def get_setting(key):
