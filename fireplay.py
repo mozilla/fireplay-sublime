@@ -10,7 +10,9 @@ import uuid
 import json
 
 from fireplaylib.client import MozClient
+# from fireplaylib import b2g_helper
 reload(sys.modules['fireplaylib.client'])
+# reload(sys.modules['fireplaylib.b2g_helper'])
 
 fp = None
 FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n    // Reload one stylesheet\n    // usage: document.styleSheets[0].reload()\n    // return: URI of stylesheet if it could be reloaded, overwise undefined\n    if (this.href) {\n        var href = this.href;\n        var i = href.indexOf('?'),\n                last_reload = 'last_reload=' + (new Date).getTime();\n        if (i < 0) {\n            href += '?' + last_reload;\n        } else if (href.indexOf('last_reload=', i) < 0) {\n            href += '&' + last_reload;\n        } else {\n            href = href.replace(/last_reload=\\d+/, last_reload);\n        }\n        return this.ownerNode.href = href;\n    }\n};\n\nStyleSheetList.prototype.reload = function reload(){\n    // Reload all stylesheets\n    // usage: document.styleSheets.reload()\n    for (var i=0; i<this.length; i++) {\n        this[i].reload()\n    }\n};"
