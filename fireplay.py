@@ -212,7 +212,8 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
     def run(self, edit, port):
         global fp
-        fp = Fireplay('localhost', port)
+        if not fp:
+            fp = Fireplay('localhost', port)
 
         fp.get_tabs()
         if fp.client.applicationType == 'browser':
