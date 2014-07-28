@@ -8,7 +8,6 @@ import atexit
 import zipfile
 import uuid
 import json
-import subprocess
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
@@ -305,18 +304,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
     def selecting_simulator(self, index):
         # TODO this part looks too hacky
         ext_path, b2g_version = self.simulators[index]
-        b2g_bin = b2g_helper.get_simulator_bin(ext_path, b2g_version, sublime.platform())
-        b2g_profile = b2g_helper.get_simulator_profile(ext_path, b2g_version, sublime.platform())
-
-        # TODO port has to change continuously
-        B2G_COMMAND = '"{0}" -profile "{1}" -start-debugger-server 7654 -no-remote'
-        b2g_command = B2G_COMMAND.format(b2g_bin, b2g_profile)
-        subprocess.Popen(
-            b2g_command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            shell=True
-        )
+        b2g_helper.run_simulator(ext_path, b2g_version, sublime.platform())
 
         # window.run_command('exec', {
         #     "cmd": [b2g_bin, '-profile "%s"' % b2g_profile, '-start-debugger-server 6666', '-no-remote']

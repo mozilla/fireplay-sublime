@@ -1,6 +1,7 @@
 import os
 import re
 import psutil
+import subprocess
 
 # Helper functions to locate the simulator
 
@@ -44,6 +45,20 @@ def get_simulator_bin(ext_path, ext_b2g, platform):
 def get_simulator_profile(ext_path, ext_b2g, platform):
     return os.path.join(ext_path, ext_b2g, 'profile')
 
+
+def run_simulator(ext_path, b2g_version, platform):
+    b2g_bin = get_simulator_bin(ext_path, b2g_version, platform)
+    b2g_profile = get_simulator_profile(ext_path, b2g_version, platform)
+
+    # TODO port has to change continuously
+    B2G_COMMAND = '"{0}" -profile "{1}" -start-debugger-server 7654 -no-remote'
+    b2g_command = B2G_COMMAND.format(b2g_bin, b2g_profile)
+    return subprocess.Popen(
+        b2g_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        shell=True
+    )
 
 # Helper functions to find open simulators
 
