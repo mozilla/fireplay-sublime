@@ -199,10 +199,14 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
         # TODO this should be a setting
         if re.search(get_setting('reload_on_save_regex'), view.file_name()):
 
-            if fp.client.applicationType == 'browser':
-                fp.reload_css()
-            else:
-                fp.inject_css()
+            try:
+                if fp.client.applicationType == 'browser':
+                    fp.reload_css()
+                else:
+                    fp.inject_css()
+            except:
+                fp = None
+                view.run_command('fireplay_start')
 
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
@@ -215,7 +219,13 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
         if not fp:
             fp = Fireplay('localhost', port)
 
-        fp.get_tabs(True)
+        try:
+            fp.get_tabs(True)
+        except:
+            fp = None
+            self.view.run_command('fireplay_start')
+            return
+
 
         if fp.client.applicationType == 'browser':
             print "browser"
@@ -265,7 +275,12 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
             return
 
         folder = self.manifests[index][0]
-        fp.deploy(folder)
+
+        try:
+            fp.deploy(folder)
+        except:
+            fp = None
+            self.view.run_command('fireplay_start')
 
     def pretty_name(self, manifest):
         return '{0} - {1}'.format(manifest[1]['name'], manifest[1]['description'])
