@@ -210,42 +210,66 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
     The Fireplay command to connect Firefox or FirefoxOS to a given port
     '''
-    def run(self, edit, port):
+    def run(self, edit, port=6000):
         global fp
+
         if not fp:
             fp = Fireplay('localhost', port)
 
-        fp.get_tabs()
+        fp.get_tabs(True)
+
         if fp.client.applicationType == 'browser':
-            self.tabs = [t for t in fp.root['tabs'] if t['url'].find('about:') == -1]
-            items = [t['url'] for t in self.tabs]
-            self.view.window().show_quick_panel(items, self.selecting_tab)
+            print "browser"
+            self.show_tabs()
         else:
-            folders = self.view.window().folders()
-            self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
+            self.show_manifests()
 
-            if not self.manifests:
-                print 'Nothing in here'
-                return
+    def show_tabs(self):
+        self.tabs = [t for t in fp.root['tabs'] if t['url'].find('about:') == -1]
+        print self.tabs
+        items = [t['url'] for t in self.tabs]
+        items.append("Disconnect from Firefox")
+        self.view.window().show_quick_panel(items, self.selecting_tab)
 
-            items = [self.pretty_name(m) for m in self.manifests]
-            self.view.window().show_quick_panel(items, self.selecting_manifest)
+    def show_manifests(self):
+        folders = self.view.window().folders()
+        self.manifests = list(filter(None, (get_manifest(f) for f in folders)))
+
+        if not self.manifests:
+            print 'Nothing in here'
+            return
+
+        items = [self.pretty_name(m) for m in self.manifests]
+        items.append("Disconnect from FirefoxOS")
+        self.view.window().show_quick_panel(items, self.selecting_manifest)
 
     def selecting_tab(self, index):
+        global fp
+
         if index == -1:
+            return
+        if index == len(self.tabs):
+            fp = None
+            self.view.run_command('fireplay_start')
             return
 
         fp.select_tab(self.tabs[index])
 
-    def pretty_name(self, manifest):
-        return '{0} - {1}'.format(manifest[1]['name'], manifest[1]['description'])
-
     def selecting_manifest(self, index):
+        global fp
         if index == -1:
+            return
+
+        if index == len(self.manifests):
+            fp = None
+            self.view.run_command('fireplay_start')
             return
 
         folder = self.manifests[index][0]
         fp.deploy(folder)
+
+    def pretty_name(self, manifest):
+        return '{0} - {1}'.format(manifest[1]['name'], manifest[1]['description'])
 
 
 class FireplayStartFirefoxCommand(sublime_plugin.TextCommand):
@@ -279,12 +303,16 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
             self.view.window().show_quick_panel(items, self.selecting_simulator)
 
     def selecting_simulator(self, index):
+        # TODO this part looks too hacky
         ext_path, b2g_version = self.simulators[index]
         b2g_bin = b2g_helper.get_simulator_bin(ext_path, b2g_version, sublime.platform())
         b2g_profile = b2g_helper.get_simulator_profile(ext_path, b2g_version, sublime.platform())
 
+        # TODO port has to change continuously
+        B2G_COMMAND = '"{0}" -profile "{1}" -start-debugger-server 7654 -no-remote'
+        b2g_command = B2G_COMMAND.format(b2g_bin, b2g_profile)
         subprocess.Popen(
-            '"{0}" -profile "{1}" -start-debugger-server 7777 -no-remote'.format(b2g_bin, b2g_profile),
+            b2g_command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True
@@ -300,9 +328,16 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
     The Fireplay main quick panel menu
     '''
     def run(self, editswi):
+        global fp
+
         mapping = {}
 
+        if fp:
+            self.view.run_command('fireplay_start_any')
+            return
+
         rdp_ports = b2g_helper.discover_rdp_ports()
+        print rdp_ports
 
         if rdp_ports['firefox']:
             for port in rdp_ports['firefox']:
