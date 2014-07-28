@@ -228,14 +228,12 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
 
 
         if fp.client.applicationType == 'browser':
-            print "browser"
             self.show_tabs()
         else:
             self.show_manifests()
 
     def show_tabs(self):
         self.tabs = [t for t in fp.root['tabs'] if t['url'].find('about:') == -1]
-        print self.tabs
         items = [t['url'] for t in self.tabs]
         items.append("Disconnect from Firefox")
         self.view.window().show_quick_panel(items, self.selecting_tab)
@@ -340,7 +338,6 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
             return
 
         rdp_ports = b2g_helper.discover_rdp_ports()
-        print rdp_ports
 
         if rdp_ports['firefox']:
             for port in rdp_ports['firefox']:
