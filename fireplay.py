@@ -329,7 +329,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
         global fp
 
         # Start FirefoxOS instance
-        simulators_map = b2g_helper.find_b2gs(sublime.platform())
+        simulators_map = b2g_helper.find_b2gs()
         self.simulators = [(k, sim) for k, sims in simulators_map.iteritems() for sim in sims]
         items = [sim[1] for sim in self.simulators]
 
@@ -341,7 +341,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
     def selecting_simulator(self, index):
         # TODO this part looks too hacky
         ext_path, b2g_version = self.simulators[index]
-        b2g_helper.run_simulator(ext_path, b2g_version, sublime.platform())
+        b2g_helper.run_simulator(ext_path, b2g_version)
 
         # window.run_command('exec', {
         #     "cmd": [b2g_bin, '-profile "%s"' % b2g_profile, '-start-debugger-server 6666', '-no-remote']
