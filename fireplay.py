@@ -19,6 +19,7 @@ reload(sys.modules['fireplaylib.firefox_helper'])
 fp = None
 FIREPLAY_CSS = "CSSStyleSheet.prototype.reload = function reload(){\n    // Reload one stylesheet\n    // usage: document.styleSheets[0].reload()\n    // return: URI of stylesheet if it could be reloaded, overwise undefined\n    if (this.href) {\n        var href = this.href;\n        var i = href.indexOf('?'),\n                last_reload = 'last_reload=' + (new Date).getTime();\n        if (i < 0) {\n            href += '?' + last_reload;\n        } else if (href.indexOf('last_reload=', i) < 0) {\n            href += '&' + last_reload;\n        } else {\n            href = href.replace(/last_reload=\\d+/, last_reload);\n        }\n        return this.ownerNode.href = href;\n    }\n};\n\nStyleSheetList.prototype.reload = function reload(){\n    // Reload all stylesheets\n    // usage: document.styleSheets.reload()\n    for (var i=0; i<this.length; i++) {\n        this[i].reload()\n    }\n};"
 FIREPLAY_CSS_RELOAD = "document.styleSheets.reload()"
+FIREPLAY_RELOAD = "location.reload()"
 
 
 class Fireplay:
@@ -48,6 +49,15 @@ class Fireplay:
     # TODO allow multiple tabs with multiple codebase
     def select_tab(self, tab):
         self.selected_tab = tab
+
+    def reload_tab():
+        # TODO Avoid touching prototype, shrink in one call only
+        self.client.send({
+            'to': console,
+            'type': 'evaluateJS',
+            'text': FIREPLAY_RELOAD,
+            'frameActor': None
+        })
 
     def reload_css(self):
         console = self.selected_tab['consoleActor']
@@ -196,8 +206,10 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
         if not fp:
             return
 
+        reload_on_save = get_setting('reload_on_save')
+
         # TODO this should be a setting
-        if re.search(get_setting('reload_on_save_regex'), view.file_name()):
+        if re.search(get_setting('reload_on_save_regex_styles'), view.file_name()):
 
             try:
                 if fp.client.applicationType == 'browser':
@@ -207,6 +219,18 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
             except:
                 fp = None
                 view.run_command('fireplay_start')
+
+        elif reload_on_save and re.search(get_setting('reload_on_save_regex_reload'), view.file_name()):
+            try:
+                if fp.client.applicationType == 'browser':
+                    fp.reload_tab()
+                    pass
+                else:
+                    fp.deploy(fp.selected_app['local_path'])
+            except:
+                fp = None
+                view.run_command('fireplay_start')
+
 
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
