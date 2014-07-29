@@ -10,7 +10,7 @@ SYSTEM = platform.system()
 B2G_BIN_OSX = 'b2g/B2G.app/Contents/MacOS/b2g-bin'
 FX_PROFILES_OSX = 'Library/Application Support/Firefox/Profiles/'
 
-NETSTAT_CMD = 'netstat -a'
+NETSTAT_CMD = 'netstat -lnptu'
 LSOF_CMD = 'lsof -i -n -P -sTCP:LISTEN'
 
 
@@ -89,13 +89,30 @@ def discover_rdp_ports():
     firefoxos = []
 
     if SYSTEM == 'Darwin':
-        test = os.popen("lsof -i -n -P -sTCP:LISTEN").read()
-        for found in test.split('\n'):
+        output = os.popen(LSOF_CMD).read()
+        for line in output.split('\n'):
 
-            m = re.search('^(firefox|b2g)[-bin]?.*[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]*)', found)
+            m = re.search('^(firefox|b2g)[-bin]?.*[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]*)', line)
             if m:
                 platform = m.group(1)
                 port = int(m.group(2))
+
+                if port == 2828:
+                    continue
+
+                if (platform == 'b2g'):
+                    firefoxos.append(port)
+                elif (platform == 'firefox'):
+                    firefox.append(port)
+
+    elif SYSTEM == 'Linux':
+        output = os.popen(NETSTAT_CMD).read()
+        for line in output.split('\n'):
+            m = re.search('tcp.*[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]*).*LISTEN.*/(firefox|b2g)', line)
+
+            if m:
+                platform = m.group(2)
+                port = int(m.group(1))
 
                 if port == 2828:
                     continue
