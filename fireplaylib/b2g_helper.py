@@ -1,6 +1,5 @@
 import os
 import re
-import psutil
 import subprocess
 import platform
 SYSTEM = platform.system()
@@ -108,21 +107,24 @@ def discover_rdp_ports():
     elif SYSTEM == 'Linux':
         output = os.popen(NETSTAT_CMD).read()
         for line in output.split('\n'):
-            m = re.search('tcp.*[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]*).*LISTEN.*/(firefox|b2g)', line)
+            m = re.search('tcp.*[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+:([0-9]+).*LISTEN.*/(firefox|b2g)', line)
 
             if m:
-                platform = m.group(2)
-                port = int(m.group(1))
+                try:
+                    platform = m.group(2)
+                    port = int(m.group(1))
 
-                if port == 2828:
+                    if port == 2828:
+                        continue
+
+                    if (platform == 'b2g'):
+                        firefoxos.append(port)
+                    elif (platform == 'firefox'):
+                        firefox.append(port)
+                except:
                     continue
-
-                if (platform == 'b2g'):
-                    firefoxos.append(port)
-                elif (platform == 'firefox'):
-                    firefox.append(port)
     else:
-
+        import psutil
         for p in psutil.process_iter():
             name = p.name()
             if name == 'b2g-bin' or name == 'b2g':
