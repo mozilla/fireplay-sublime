@@ -9,6 +9,9 @@ SYSTEM = platform.system()
 B2G_BIN_OSX = 'b2g/B2G.app/Contents/MacOS/b2g-bin'
 FX_PROFILES_OSX = 'Library/Application Support/Firefox/Profiles/'
 
+B2G_BIN_LINUX = 'b2g/b2g-bin'
+FX_PROFILES_LINUX = '.mozilla/firefox/'
+
 NETSTAT_CMD = 'netstat -lnptu'
 LSOF_CMD = 'lsof -i -n -P -sTCP:LISTEN'
 
@@ -23,8 +26,10 @@ def is_simulator(extensions_path, extension):
 
 
 def find_b2gs():
-    if (SYSTEM == 'Darwin'):
+    if SYSTEM == 'Darwin':
         profiles_path = os.path.join(os.getenv('HOME'), FX_PROFILES_OSX)
+    elif SYSTEM == 'Linux':
+        profiles_path = os.path.join(os.getenv('HOME'), FX_PROFILES_LINUX)
 
     profiles = {}
     for profile in os.listdir(profiles_path):
@@ -42,6 +47,8 @@ def find_b2gs():
 def get_simulator_bin(ext_path, ext_b2g):
     if (SYSTEM == 'Darwin'):
         b2g_bin = B2G_BIN_OSX
+    elif (SYSTEM == 'Linux'):
+        b2g_bin = B2G_BIN_LINUX
 
     return os.path.join(ext_path, ext_b2g, b2g_bin)
 
