@@ -11,13 +11,6 @@ The aim is to:
 
 1. Install the plugin
 ```
-// Install dependencies
-$ wget https://pypi.python.org/packages/source/p/psutil/psutil-2.1.1.tar.gz
-$ tar xvf psutil-2.1.1.tar.gz
-$ cd psutil*
-$ python2.6 setup.py install
-
-// Install plugin
 $ cd ~/Library/Application\ Support/Sublime\ Text\ 2/Packages
 $ git clone https://github.com/mozilla/fireplay-sublime fireplay
 ```
