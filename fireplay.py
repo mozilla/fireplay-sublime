@@ -50,8 +50,9 @@ class Fireplay:
     def select_tab(self, tab):
         self.selected_tab = tab
 
-    def reload_tab():
+    def reload_tab(self):
         # TODO Avoid touching prototype, shrink in one call only
+        console = self.selected_tab['consoleActor']
         self.client.send({
             'to': console,
             'type': 'evaluateJS',
@@ -215,7 +216,10 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
                 if fp.client.applicationType == 'browser':
                     fp.reload_css()
                 else:
-                    fp.inject_css()
+                    # This function receives three messages, this could be blocking
+                    # new thread for now
+                    from threading import thread
+                    thread.start_new_thread(fp.inject_css, ())
             except:
                 fp = None
                 view.run_command('fireplay_start')
