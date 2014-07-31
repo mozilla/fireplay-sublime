@@ -8,6 +8,7 @@ import atexit
 import zipfile
 import uuid
 import json
+import thread
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
@@ -218,7 +219,6 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
                 else:
                     # This function receives three messages, this could be blocking
                     # new thread for now
-                    from threading import thread
                     thread.start_new_thread(fp.inject_css, ())
             except:
                 fp = None
@@ -256,7 +256,7 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
 
 
         if fp.client.applicationType == 'browser':
-            self.show_tabs()
+            sublime.set_timeout(self.show_tabs, 20)
         else:
             self.show_manifests()
 
