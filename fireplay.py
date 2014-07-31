@@ -8,6 +8,7 @@ import atexit
 import zipfile
 import uuid
 import json
+import thread
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
@@ -50,8 +51,9 @@ class Fireplay:
     def select_tab(self, tab):
         self.selected_tab = tab
 
-    def reload_tab():
+    def reload_tab(self):
         # TODO Avoid touching prototype, shrink in one call only
+        console = self.selected_tab['consoleActor']
         self.client.send({
             'to': console,
             'type': 'evaluateJS',
@@ -215,7 +217,9 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
                 if fp.client.applicationType == 'browser':
                     fp.reload_css()
                 else:
-                    fp.inject_css()
+                    # This function receives three messages, this could be blocking
+                    # new thread for now
+                    thread.start_new_thread(fp.inject_css, ())
             except:
                 fp = None
                 view.run_command('fireplay_start')
@@ -252,7 +256,7 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
 
 
         if fp.client.applicationType == 'browser':
-            self.show_tabs()
+            sublime.set_timeout(self.show_tabs, 20)
         else:
             self.show_manifests()
 
