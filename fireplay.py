@@ -367,17 +367,20 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
 
         rdp_ports = b2g_helper.discover_rdp_ports()
 
-        if rdp_ports['firefox']:
-            for port in rdp_ports['firefox']:
-                mapping[port] = 'Firefox on %s' % port
-        else:
-            mapping['firefox'] = 'Start new Firefox instance'
-
         if rdp_ports['firefoxos']:
             for port in rdp_ports['firefoxos']:
                 mapping[port] = 'FirefoxOS on %s' % port
         else:
             mapping['firefoxos'] = 'Start new FirefoxOS instance'
+
+        # Making fireplay not default with Firefox Desktop
+        if get_setting('fireplay_firefox'):
+            if rdp_ports['firefox']:
+                for port in rdp_ports['firefox']:
+                    mapping[port] = 'Firefox on %s' % port
+            else:
+                mapping['firefox'] = 'Start new Firefox instance'
+
 
         items = mapping.values()
         self.ports = mapping.keys()
