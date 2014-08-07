@@ -7,15 +7,12 @@ The aim is to:
 
 2. **Use Sublime Text to deploy apps for FirefoxOS**: while the new [Firefox WebIDE](https://hacks.mozilla.org/2014/06/webide-lands-in-nightly/) is awesome, some developers might want to use their favourite editors.
 
-## Installing (for braves on OS X)
+## Installing (for braves on OS X and Linux)
 
-1. Install the plugin
 ```
 $ cd ~/Library/Application\ Support/Sublime\ Text\ 2/Packages
 $ git clone https://github.com/mozilla/fireplay-sublime fireplay
 ```
-2. In Firefox `about:config` set `devtools.debugger.remote-enabled` to **true**
-3. (optional) In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
 
 ## Usage
 
@@ -25,7 +22,14 @@ Usage instruction are even more experimental and will be soon simplified.
 2. In Sublime select `Fireplay` and follow the instruction
 3. Select to connect to existing Firefox or Firefox OS
 
-PS: if you are starting a new Firefox, open the `Tools`->`Web Developer` ->`Developer toolbar` and type `listen`
+
+## Enable with Firefox Desktop (experimental)
+Usage with Firefox is still experimental:
+
+1. In Firefox `about:config` set `devtools.debugger.remote-enabled` to **true**
+2. (optional) In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
+3. In your Sublime Text's packages folder, in `fireplay.sublime-settings` set `fireplay_firefox` to **true**
+4. Open the `Tools`->`Web Developer` ->`Developer toolbar` and type `listen`
 
 ## Inspirations
 ### Existing projects and libraries to explore
