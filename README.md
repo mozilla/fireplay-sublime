@@ -34,4 +34,4 @@ Usage with Firefox is still experimental:
 
 * * *
 
-Read the [INSPIRATION.md](https://github.com/nicola/fireplay-sublime/blob/master/INSPIRATIONS.md) to satisfy your innatural curiosity.
+Read [INSPIRATIONS.md](INSPIRATIONS.md) to satisfy your innatural curiosity.
