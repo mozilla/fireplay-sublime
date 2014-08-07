@@ -1,5 +1,6 @@
 # Fireplay Sublime
-*ATTENTION:* this piece of code is super experimental and can be so radioactive that it could break your Sublime! It's going to be amazing.
+
+> *ATTENTION:* this piece of code is super experimental and can be so radioactive that it could break your Sublime! It's going to be amazing.
 
 The aim is to:
 
