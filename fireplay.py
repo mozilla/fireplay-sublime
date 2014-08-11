@@ -239,7 +239,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
 
 class FireplayInstallFirefoxOs(sublime_plugin.TextCommand):
     '''
-    The Fireplay command to install a FirefoxOS simulator
+    The Fireplay command to install a Firefox OS simulator
     '''
     def run(self, edit):
         global fp
@@ -341,7 +341,7 @@ class FireplayStartFirefoxOsCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         global fp
 
-        # Start FirefoxOS instance
+        # Start a Firefox OS instance
         simulators_map = b2g_helper.find_b2gs()
         self.simulators = [(k, sim) for k, sims in simulators_map.iteritems() for sim in sims]
         items = [sim[1] for sim in self.simulators]
