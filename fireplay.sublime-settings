@@ -1,6 +1,6 @@
 {
 	"firefox_path": {
-		"osx": "/Applications/FirefoxNightly.app/Contents/MacOS/firefox-bin",
+		"osx": "/Applications/Firefox.app/Contents/MacOS/firefox-bin",
 		"windows": "C:\\Program Files\\Mozilla Firefox\\firefox.exe",
 		"linux": "/usr/bin/firefox"
 	},
