@@ -19,9 +19,21 @@ $ git clone https://github.com/mozilla/fireplay-sublime fireplay
 
 Usage instruction are even more experimental and will be soon simplified.
 
-1. Run `cmd`+`shift`+`p`
-2. In Sublime select `Fireplay` and follow the instruction
-3. Select to connect to existing Firefox or Firefox OS
+Open a simulator:
+1. In Sublime Text, press `cmd`+`shift`+`r`
+2. If no simulator is open, select "Start new FirefoxOS instance"
+
+Start a connection:
+1. In Sublime Text, press `cmd`+`shift`+`r`
+2. Select the FirefoxOS port and you are connected!
+
+Push an app:
+1. Open the folder containing your manifest.webapp in Sublime Text.
+2. In Sublime Text, press `cmd`+`shift`+`r`
+3. A list of opened apps is shown, select the one to deploy
+
+Push on save and live-reload css:
+Once you are connected to your device and pushed the app, saving html and js files will cause a push, editing css files will reload the css only
 
 
 ## Enable with Firefox Desktop (experimental)
@@ -29,7 +41,14 @@ Usage with Firefox is still experimental:
 
 1. In Firefox `about:config` set `devtools.debugger.remote-enabled` to **true**
 2. (optional) In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
-3. In your Sublime Text's packages folder, in `fireplay.sublime-settings` set `fireplay_firefox` to **true**
+3. In your Sublime Text's packages folder, change in fireplay.sublime-settings
+    ```
+    fireplay_firefox: false,
+    ```
+    to
+    ```
+    fireplay_firefox: true,
+    ```
 4. Open the `Tools`->`Web Developer` ->`Developer toolbar` and type `listen`
 
 * * *
