@@ -9,6 +9,7 @@ import zipfile
 import uuid
 import json
 import thread
+import webbrowser
 
 from fireplaylib.client import MozClient
 from fireplaylib import b2g_helper
@@ -236,6 +237,15 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
                 view.run_command('fireplay_start')
 
 
+class FireplayInstallFirefoxOs(sublime_plugin.TextCommand):
+    '''
+    The Fireplay command to install FirefoxOS simulator
+    '''
+    def run(self, edit):
+        global fp
+        fxos_simulator = "https://ftp.mozilla.org/pub/mozilla.org/labs/fxos-simulator/"
+        webbrowser.open_new_tab(fxos_simulator)
+
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
@@ -253,7 +263,6 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
             fp = None
             self.view.run_command('fireplay_start')
             return
-
 
         if fp.client.applicationType == 'browser':
             sublime.set_timeout(self.show_tabs, 20)
@@ -371,7 +380,14 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
             for port in rdp_ports['firefoxos']:
                 mapping[port] = 'FirefoxOS on %s' % port
         else:
-            mapping['firefoxos'] = 'Start new FirefoxOS instance'
+            # Find b2g binaries
+            b2g_map = b2g_helper.find_b2gs()
+            b2g_bins = [(k, sim) for k, sims in b2g_map.iteritems() for sim in sims]
+            
+            if b2g_bins:
+                mapping['firefoxos'] = 'Start new FirefoxOS instance'
+            else:
+                mapping['install_firefoxos'] = 'Install FirefoxOS simulator'
 
         # Making fireplay not default with Firefox Desktop
         if get_setting('fireplay_firefox'):
@@ -381,7 +397,6 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
             else:
                 mapping['firefox'] = 'Start new Firefox instance'
 
-
         items = mapping.values()
         self.ports = mapping.keys()
         self.view.window().show_quick_panel(items, self.selecting_port)
@@ -390,12 +405,16 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
         if index == -1:
             return
 
-        if self.ports[index] == 'firefox':
+        command = self.ports[index]
+
+        if command == 'firefox':
             self.view.run_command('fireplay_start_firefox')
-        elif self.ports[index] == 'firefoxos':
+        elif command == 'firefoxos':
             self.view.run_command('fireplay_start_firefox_os')
+        elif command == 'install_firefoxos':
+            self.view.run_command('fireplay_install_firefox_os')
         else:
-            self.view.run_command('fireplay_start_any', {'port': self.ports[index]})
+            self.view.run_command('fireplay_start_any', {'port': command})
 
 
 def get_setting(key):
