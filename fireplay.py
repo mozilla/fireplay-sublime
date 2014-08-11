@@ -239,7 +239,7 @@ class FireplayCssReloadOnSave(sublime_plugin.EventListener):
 
 class FireplayInstallFirefoxOs(sublime_plugin.TextCommand):
     '''
-    The Fireplay command to install FirefoxOS simulator
+    The Fireplay command to install a FirefoxOS simulator
     '''
     def run(self, edit):
         global fp
@@ -249,7 +249,7 @@ class FireplayInstallFirefoxOs(sublime_plugin.TextCommand):
 
 class FireplayStartAnyCommand(sublime_plugin.TextCommand):
     '''
-    The Fireplay command to connect Firefox or FirefoxOS to a given port
+    The Fireplay command to connect Firefox or Firefox OS to a given port
     '''
     def run(self, edit, port=6000):
         global fp
@@ -284,7 +284,7 @@ class FireplayStartAnyCommand(sublime_plugin.TextCommand):
             return
 
         items = [self.pretty_name(m) for m in self.manifests]
-        items.append("Disconnect from FirefoxOS")
+        items.append("Disconnect from Firefox OS")
         self.view.window().show_quick_panel(items, self.selecting_manifest)
 
     def selecting_tab(self, index):
@@ -378,16 +378,16 @@ class FireplayStartCommand(sublime_plugin.TextCommand):
 
         if rdp_ports['firefoxos']:
             for port in rdp_ports['firefoxos']:
-                mapping[port] = 'FirefoxOS on %s' % port
+                mapping[port] = 'Firefox OS on %s' % port
         else:
             # Find b2g binaries
             b2g_map = b2g_helper.find_b2gs()
             b2g_bins = [(k, sim) for k, sims in b2g_map.iteritems() for sim in sims]
             
             if b2g_bins:
-                mapping['firefoxos'] = 'Start new FirefoxOS instance'
+                mapping['firefoxos'] = 'Start new Firefox OS simulator instance'
             else:
-                mapping['install_firefoxos'] = 'Install FirefoxOS simulator'
+                mapping['install_firefoxos'] = 'Install Firefox OS simulator'
 
         # Making fireplay not default with Firefox Desktop
         if get_setting('fireplay_firefox'):
@@ -450,7 +450,7 @@ def get_manifest(target_app_path):
     if os.path.isdir(target_app_path):
         manifest_file = os.path.join(target_app_path, 'manifest.webapp')
         if not os.path.isfile(manifest_file):
-            print "Error: Failed to find FFOS packaged app manifest file '%s'! That directory does not contain a packaged app?" % manifest_file
+            print "Error: Failed to find the Firefox OS manifest file '%s'! Does that directory contain a packaged app?" % manifest_file
             return None
         return (target_app_path, json.loads(open(manifest_file, 'r').read()))
 
@@ -459,12 +459,12 @@ def get_manifest(target_app_path):
             z = zipfile.ZipFile(target_app_path, 'r')
             bytes = z.read('manifest.webapp')
         except Exception, e:
-            print "Error: Failed to read FFOS packaged app manifest file 'manifest.webapp' in zip file '%s'! Error: %s" % target_app_path, str(e)
+            print "Error: Failed to read 'manifest.webapp' in zip file '%s'! Error: %s" % target_app_path, str(e)
             return None
         return (target_app_path, json.loads(str(bytes)))
 
     else:
-        print "Error: Path '%s' is neither a directory or a .zip file to represent the location of a FFOS packaged app!" % target_app_path
+        print "Error: Path '%s' is neither a directory or a .zip file to pointing to a Firefox OS packaged app." % target_app_path
         return None
 
     return None
