@@ -34,12 +34,13 @@ def find_b2gs():
     profiles = {}
     for profile in os.listdir(profiles_path):
         ext_path = os.path.join(profiles_path, profile, 'extensions')
-        ext_dirs = os.listdir(ext_path)
-        profiles[ext_path] = [
-            ext
-            for ext in ext_dirs
-            if is_simulator(ext_path, ext)
-        ]
+        if os.path.isdir(ext_path):
+            ext_dirs = os.listdir(ext_path)
+            profiles[ext_path] = [
+                ext
+                for ext in ext_dirs
+                if is_simulator(ext_path, ext)
+            ]
 
     return profiles
 
