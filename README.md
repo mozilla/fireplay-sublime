@@ -60,6 +60,14 @@ This method is still experimental:
 
 Unfortunately, you have to do that every time you close and reopen the browser as the setting is not remembered between sessions.
 
-* * *
+
+## Contribute to this project
+
+It's still early times, but you can help by testing this out and [reporting issues](https://github.com/mozilla/fireplay-sublime/issues/new). Or helping fix [existing issues](https://github.com/mozilla/fireplay-sublime/issues)! We're specially interested in getting help for Windows support.
+
+When reporting errors, it is often useful to attach the logs from the Sublime Text console. Go to the _View_ menu and select `Show Console` if it's not shown yet, then copy and paste the info in the console in the bug description.
+
+
+## Intrigued about where did this come from?
 
 Read [INSPIRATIONS.md](INSPIRATIONS.md) to satisfy your unnatural curiosity.
