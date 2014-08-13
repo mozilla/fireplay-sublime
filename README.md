@@ -19,24 +19,31 @@ $ git clone https://github.com/mozilla/fireplay-sublime fireplay
 
 Install the plugin by cloning into Sublime's plugin directory (as detailed above), then start Sublime Text.
 
+### Developing for Firefox OS
+
 #### Open a simulator
+
 1. In Sublime Text, press `cmd`+`shift`+`r`.
 2. If no simulator is open, select `Start new Firefox OS simulator instance`.
 
 #### Start a connection
+
 1. In Sublime Text, press `cmd`+`shift`+`r`.
 2. Select the Firefox OS port and you are connected!
 
 #### Push an app
+
 1. Open the folder containing your Firefox OS app as a project in Sublime Text. This has to be the folder that contains the `manifest.webapp` file.
 2. In Sublime Text, press `cmd`+`shift`+`r`.
 3. A list of open apps will be shown. Select which one you want to deploy.
 
 #### Push on save and live-reload css:
+
 When you are connected to your device and pushed the app at least once, saving HTML and JS files will trigger a complete app push. Editing CSS files will only reload the CSS.
 
-## Enable with Firefox Desktop (experimental)
-Usage with Firefox is still experimental:
+### Developing for Firefox Desktop (experimental)
+
+This method is still experimental:
 
 1. In Firefox `about:config` set `devtools.debugger.remote-enabled` to **true**
 2. (optional) In Firefox `about:config` set `devtools.debugger.prompt-connection` to **false**
@@ -48,8 +55,10 @@ Usage with Firefox is still experimental:
   ```
   fireplay_firefox: true,
   ```
-4. In Firefox, open the Developer toolbar by going to `Tools`⟶ `Web Developer`⟶ `Developer toolbar`. A command line prompt will open at the bottom of the browser. Focus in it and type `listen`, then press `ENTER`.
+4. In Firefox, open the Developer toolbar by going to `Tools`⟶ `Web Developer`⟶ `Developer toolbar`. A command line prompt will open at the bottom of the browser. Focus on it and type `listen`, then press `ENTER`.
 5. You should now be able to live edit CSS and HTML from Sublime.
+
+Unfortunately, you have to do that every time you close and reopen the browser as the setting is not remembered between sessions.
 
 * * *
 
